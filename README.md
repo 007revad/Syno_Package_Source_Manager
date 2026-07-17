@@ -14,8 +14,7 @@ See github/Repositores/Sync_my-other-scripts_token. txt<br> <br>
 
 ### Description
 
-Description goes here
-
+Synology package that allows you disable and enable community package sources you have added to Package Center.
 
 ### Screenshots
 

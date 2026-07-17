@@ -1,4 +1,4 @@
-# Syno Source Manager
+# <img src="images/icon.png" width="40"> Syno Package Source Manager
 
 <a href="https://github.com/007revad/Syno_Source_Manager/releases"><img src="https://img.shields.io/github/release/007revad/Syno_Source_Manager.svg"></a>
 [![Github Releases](https://img.shields.io/github/downloads/007revad/Syno_Source_Manager/total.svg)](https://github.com/007revad/Syno_Source_Manager/releases)
@@ -16,6 +16,24 @@ See github/Repositores/Sync_my-other-scripts_token. txt<br> <br>
 
 Synology package that allows you disable and enable community package sources you have added to Package Center.
 
+Available for DSM 7 and DSM 6.
+
+### How to install the package
+
+There are 2 ways to install the package:
+
+**Directly from Package Center**
+
+1. Add [007revad Synology Package Source](https://github.com/007revad/Synology_package_source) to package Center.
+2. Click on the Community section in Package Center and install the package.
+
+<p align="center"><kbd><img src="/images/pkg_center.png"></kbd></p>
+
+**Or download the package and install it manually**
+1. Download the latest version .spk file from https://github.com/007revad/Syno_Source_Manager/releases and save it to your Synology.
+2. In Package Center click on Manual Install.
+3. Browse to where you downloaded the .spk file.
+4. Select the .spk file and click Next.
 ### Screenshots
 
 <!--- <p align="center">Description of image 1 goes here</p> --->

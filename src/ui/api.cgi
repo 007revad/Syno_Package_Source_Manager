@@ -1,12 +1,11 @@
 #!/bin/bash
-
-################################################################################################
-# Feed Manager API - CGI API
-################################################################################################
+#----------------------------------------------------------
+# Package Source Manager API - CGI API
+#----------------------------------------------------------
 
 # --------- 1. Common variables and path calculations -------------
 
-PKG_NAME="FeedManager"
+PKG_NAME="SourceManager"
 PKG_ROOT="/var/packages/${PKG_NAME}"
 PKG_VERSION=$(synopkg version "$PKG_NAME")
 TARGET_DIR="${PKG_ROOT}/target"

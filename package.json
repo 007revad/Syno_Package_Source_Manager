@@ -1,13 +1,11 @@
 {
-  "package": "FeedManager",
-  "name": "FeedManager",
-  "version": "1.0.0",
-  "description": "Enable or disable Package Center feed sources without losing them",
+  "package": "SourceManager",
+  "name": "SourceManager",
+  "version": "1.0.1",
+  "description": "Synology package that allows you disable and enable community package sources you have added to Package Center",
   "target": "./src",
   "install_type": "package",
   "install_dep_packages": "",
-  "ctl_stop": "no",
-  "ctl_uninstall": "no",
   "support_conf_folder": "yes",
   "synology": {
     "maintainer": "007revad",
@@ -19,9 +17,9 @@
     "os_min_ver": "7.0-40337",
     "os_max_ver": "9.9-99999",
     "arch": "noarch",
-    "displayname": "Source Manager",
+    "displayname": "Package Source Manager",
     "dsmuidir": "ui",
-    "dsmappname": "SYNO.SDS.FeedManager",
+    "dsmappname": "SYNO.SDS._ThirdParty.App.SourceManager",
     "thirdparty": "yes",
     "beta": "no"
   }

@@ -1,0 +1,19 @@
+{
+  "main.js": {
+    "SYNO.SDS._ThirdParty.App.SourceManager": {
+      "type": "app",
+      "title": "Package Source Manager",
+      "desc": "Synology package that allows you disable and enable community package sources you have added to Package Center",
+      "icon": "images/icon_{0}.png",
+      "appWindow": "SYNO.SDS.SourceManager.MainWindow",
+      "allowMultiInstance": false,
+      "allowStandalone": true,
+      "allUsers": true
+    },
+    "SYNO.SDS.SourceManager.MainWindow": {
+      "type": "lib",
+      "title": "Package Source Manager",
+      "icon": "images/icon_{0}.png"
+    }
+  }
+}

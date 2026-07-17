@@ -6,9 +6,9 @@ There are 2 ways you can set the required permissions for the package.
 
 ```
 sudo -i
-pkg=FeedManager
-file=/etc/sudoers.d/FeedManager
-script=/var/packages/FeedManager/target/ui/bin/write_feeds.sh
+pkg=SourceManager
+file=/etc/sudoers.d/SourceManager
+script=/var/packages/SourceManager/target/ui/bin/write_feeds.sh
 echo "$pkg ALL=(root) NOPASSWD: $script" >> "$file"
 chmod 0440 "$file"
 cat "$file"
@@ -24,9 +24,9 @@ cat "$file"
 6. Click **Task Settings**.
 7. In the box under **User-defined script** copy and paste the following. 
     ```
-    pkg=FeedManager
-    file=/etc/sudoers.d/FeedManager
-    script=/var/packages/FeedManager/target/bin/write_feeds.sh
+    pkg=SourceManager
+    file=/etc/sudoers.d/SourceManager
+    script=/var/packages/SourceManager/target/bin/write_feeds.sh
     echo "$pkg ALL=(root) NOPASSWD: $script" >> "$file"
     chmod 0440 "$file"
     cat "$file"

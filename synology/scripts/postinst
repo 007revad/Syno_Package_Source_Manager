@@ -1,0 +1,69 @@
+#!/bin/bash
+
+PKG_NAME=$(basename "$SYNOPKG_PKGDEST")
+TARGET_DIR="/var/packages/$PKG_NAME/target"
+UI_DIR="$TARGET_DIR/ui"
+BIN_DIR="$TARGET_DIR/bin"
+VAR_DIR="/var/packages/$PKG_NAME/var"
+
+LIVE_FILE="/usr/syno/etc/packages/feeds"
+MASTER_FILE="$VAR_DIR/feeds"
+
+# Log function
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$VAR_DIR/install.log" 2>/dev/null || echo "$1"
+}
+
+# Create var directory for logs and the master feeds file
+mkdir -p "$VAR_DIR" || { echo "Error: Failed to create VAR_DIR"; exit 1; }
+
+log_message "Post-installation starting for package: $PKG_NAME"
+
+# Remove spurious files injected by the package builder
+rm -f "$UI_DIR/Makefile"
+rm -f "$UI_DIR/ui"  # self-referencing symlink
+rm -f "$UI_DIR/texts/strings"  # strings file template
+log_message "Removed spurious package builder files"
+
+# Set execute permissions
+chmod +x "$UI_DIR/api.cgi" 2>/dev/null
+chmod +x "$BIN_DIR/write_feeds.sh" 2>/dev/null
+log_message "Set execute permissions for api.cgi and write_feeds.sh"
+
+# Bootstrap the master feeds file from the live file, only if we don't
+# already have a master copy (so we never clobber an existing master
+# on upgrade). Every entry gets "enabled": true since it's currently
+# live in the real feeds file.
+if [ -f "$LIVE_FILE" ] && [ ! -f "$MASTER_FILE" ]; then
+    if python3 -c "
+import json
+with open('$LIVE_FILE') as f:
+    data = json.load(f)
+for entry in data:
+    entry['enabled'] = True
+with open('$MASTER_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+"; then
+        chmod 644 "$MASTER_FILE"
+        log_message "Bootstrapped master feeds file from $LIVE_FILE"
+    else
+        log_message "Warning: Failed to bootstrap master feeds file from $LIVE_FILE"
+        ERRORS="1"
+    fi
+elif [ ! -f "$LIVE_FILE" ]; then
+    log_message "Warning: $LIVE_FILE not found, nothing to bootstrap"
+fi
+
+# NOTE: sudoers grant is NOT created here. postinst is not reliably
+# running as root on DSM 7 (see set_package_permissions.md), so the
+# NOPASSWD grant that lets api.cgi write the live feeds file as root
+# has to be set up manually (SSH or Task Scheduler), same as your
+# other packages.
+
+if [ -z "$ERRORS" ]; then
+    log_message "Post-installation completed successfully"
+else
+    log_message "Post-installation completed with warnings"
+fi
+echo >> "$VAR_DIR/install.log"
+exit 0

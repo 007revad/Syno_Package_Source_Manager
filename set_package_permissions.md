@@ -8,8 +8,10 @@ There are 2 ways you can set the required permissions for the package.
 sudo -i
 pkg=SourceManager
 file=/etc/sudoers.d/SourceManager
-script=/var/packages/SourceManager/target/ui/bin/write_feeds.sh
-echo "$pkg ALL=(root) NOPASSWD: $script" >> "$file"
+script=/var/packages/SourceManager/target/bin/write_feeds.sh
+source=/var/packages/SourceManager/var/feeds_live.tmp
+target=/usr/syno/etc/packages/feeds
+echo "$pkg ALL=(root) NOPASSWD: $script" "$source" "$target" >> "$file"
 chmod 0440 "$file"
 cat "$file"
 ```
@@ -27,6 +29,9 @@ cat "$file"
     pkg=SourceManager
     file=/etc/sudoers.d/SourceManager
     script=/var/packages/SourceManager/target/bin/write_feeds.sh
+    source=/var/packages/SourceManager/var/feeds_live.tmp
+    target=/usr/syno/etc/packages/feeds
+    echo "$pkg ALL=(root) NOPASSWD: $script" "$source" "$target" >> "$file"
     echo "$pkg ALL=(root) NOPASSWD: $script" >> "$file"
     chmod 0440 "$file"
     cat "$file"

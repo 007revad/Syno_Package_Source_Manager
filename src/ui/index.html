@@ -8,32 +8,19 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
+            margin: 0;
+            background-color: white;
         }
         .container {
-            max-width: 900px;
-            margin: 0 auto;
             background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #0066cc, #004499);
-            color: white;
-            padding: 20px;
-            border-radius: 8px 8px 0 0;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
         }
         .feeds-section {
-            margin: 20px;
-            padding: 20px;
+            margin: 20px 20px 0 20px;
+            padding: 0;
             border: 1px solid #ddd;
             border-radius: 8px;
             background: #fafafa;
+            overflow: hidden;
         }
         .feed-row {
             display: flex;
@@ -57,6 +44,23 @@
             font-size: 13px;
             color: #777;
             word-break: break-all;
+        }
+        .delete-row-btn {
+            flex-shrink: 0;
+            margin-left: 14px;
+            width: 22px;
+            height: 22px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            color: #b00;
+            font-size: 15px;
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .delete-row-btn:hover {
+            background: #ffe0e0;
         }
         /* Toggle switch */
         .switch {
@@ -92,37 +96,40 @@
             border-radius: 50%;
         }
         input:checked + .slider {
-            background-color: #0066cc;
+            background-color: #1B8AED;
         }
         input:checked + .slider:before {
             transform: translateX(22px);
         }
         .actions {
             display: flex;
-            gap: 12px;
+            justify-content: flex-end;
+            gap: 10px;
             margin: 20px;
         }
         button {
-            border: none;
-            padding: 12px 30px;
-            border-radius: 5px;
+            padding: 5px 18px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: bold;
         }
         #saveBtn {
-            background-color: #0066cc;
+            border: none;
+            background-color: #1B8AED;
             color: white;
         }
         #saveBtn:hover {
-            background-color: #004a99;
+            background-color: #057FEB;
         }
         #cancelBtn {
-            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+            background-color: white;
             color: #333;
         }
         #cancelBtn:hover {
-            background-color: #cccccc;
+            border: 1px solid #aaa;
+            background-color: #f0f0f0;
         }
         button:disabled {
             background-color: #ccc;
@@ -130,10 +137,17 @@
         }
         .status {
             margin: 0 20px 20px 20px;
+            height: 40px;
+            line-height: 20px;
             padding: 10px;
             border-radius: 4px;
+            border: 1px solid transparent;
             font-weight: bold;
-            display: none;
+            font-size: 13px;
+            box-sizing: content-box;
+            white-space: normal;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
         .status.success {
             color: #008800;
@@ -154,10 +168,6 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Package Source Manager</h1>
-        </div>
-
         <div class="feeds-section">
             <div id="feedList">Loading community sources...</div>
         </div>
@@ -165,8 +175,8 @@
         <div class="status" id="status"></div>
 
         <div class="actions">
-            <button id="saveBtn">Save</button>
             <button id="cancelBtn">Cancel</button>
+            <button id="saveBtn">Save</button>
         </div>
     </div>
 

@@ -26,11 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function showStatus(kind, message) {
         status.className = `status ${kind}`;
         status.textContent = message;
-        status.style.display = 'block';
     }
 
     function hideStatus() {
-        status.style.display = 'none';
+        status.className = 'status';
+        status.textContent = '';
     }
 
     function render() {
@@ -66,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             input.checked = !!f.enabled;
             input.addEventListener('change', () => {
                 feeds[idx].enabled = input.checked;
+                render();
             });
 
             const slider = document.createElement('span');
@@ -75,6 +76,24 @@ document.addEventListener('DOMContentLoaded', () => {
             label.appendChild(slider);
 
             row.appendChild(info);
+
+            // Only offer removal for disabled feeds - an enabled one
+            // should be toggled off first, which also protects against
+            // accidentally deleting something still live in DSM.
+            if (!f.enabled) {
+                const del = document.createElement('button');
+                del.type = 'button';
+                del.className = 'delete-row-btn';
+                del.title = 'Remove this feed permanently (takes effect on Save)';
+                del.textContent = '\u00d7';
+                del.addEventListener('click', () => {
+                    feeds.splice(idx, 1);
+                    render();
+                    showStatus('info', `"${f.name}" removed - click Save to make it permanent`);
+                });
+                row.appendChild(del);
+            }
+
             row.appendChild(label);
             feedList.appendChild(row);
         });

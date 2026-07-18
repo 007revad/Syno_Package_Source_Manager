@@ -37,7 +37,7 @@ There are 2 ways to install the package:
 ### Screenshots
 
 <!--- <p align="center">Description of image 1 goes here</p> --->
-<p align="center"><kbd><img src="/images/windows.png"></kbd></p>
+<p align="center"><kbd><img src="/images/window.png"></kbd></p>
 
 <!--- <br> --->
 

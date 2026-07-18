@@ -48,7 +48,7 @@ cat "$file"
 <p align="center"><kbd><img src="images/sudoers2.png"></kbd></p>
 
 <p align="center">Step 3</p>
-<p align="center"><kbd><img src="images/sudoers3-2.png"></kbd></p>
+<p align="center"><kbd><img src="images/sudoers3.png"></kbd></p>
 
 <p align="center">Step 4</p>
 <p align="center"><kbd><img src="images/sudoers4.png"></kbd></p>

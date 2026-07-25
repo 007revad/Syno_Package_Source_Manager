@@ -1,5 +1,5 @@
 {
-  "main.js": {
+  "source_manager.js": {
     "SYNO.SDS._ThirdParty.App.SourceManager": {
       "type": "app",
       "title": "Package Source Manager",

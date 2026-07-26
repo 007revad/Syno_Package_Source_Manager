@@ -1,14 +1,2 @@
-v1.0.4
+v1.0.5
 - First release.
-
-v1.0.3
-- First release.
-
-v1.0.2
-- Beta release.
-
-v1.0.1
-- Beta release.
-
-v1.0.0
-- First beta release.

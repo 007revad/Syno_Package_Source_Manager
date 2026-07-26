@@ -27,8 +27,8 @@ log_message "Removed spurious package builder files"
 
 # Set execute permissions
 chmod +x "$UI_DIR/api.cgi" 2>/dev/null
-chmod +x "$BIN_DIR/write_feeds.sh" 2>/dev/null
-log_message "Set execute permissions for api.cgi and write_feeds.sh"
+chmod +x "$BIN_DIR/feed_api.sh" 2>/dev/null
+log_message "Set execute permissions for api.cgi and feed_api.sh"
 
 # Bootstrap the master feeds file from the live file, only if we don't
 # already have a master copy (so we never clobber an existing master

@@ -9,9 +9,9 @@ sudo -i
 pkg=SourceManager
 file=/etc/sudoers.d/SourceManager
 script=/var/packages/SourceManager/target/bin/feed_api.sh
-echo "$pkg ALL=(root) NOPASSWD: $script" list > "$file"
-echo "$pkg ALL=(root) NOPASSWD: $script" add * >> "$file"
-echo "$pkg ALL=(root) NOPASSWD: $script" delete * >> "$file"
+echo "$pkg ALL=(root) NOPASSWD: $script list" > "$file"
+echo "$pkg ALL=(root) NOPASSWD: $script add *" >> "$file"
+echo "$pkg ALL=(root) NOPASSWD: $script delete *" >> "$file"
 chmod 0440 "$file"
 cat "$file"
 ```
@@ -30,8 +30,8 @@ cat "$file"
     file=/etc/sudoers.d/SourceManager
     script=/var/packages/SourceManager/target/bin/feed_api.sh
     echo "$pkg ALL=(root) NOPASSWD: $script" list > "$file"
-    echo "$pkg ALL=(root) NOPASSWD: $script" add * >> "$file"
-    echo "$pkg ALL=(root) NOPASSWD: $script" delete * >> "$file"
+    echo "$pkg ALL=(root) NOPASSWD: $script add *" >> "$file"
+    echo "$pkg ALL=(root) NOPASSWD: $script delete *" >> "$file"
     chmod 0440 "$file"
     cat "$file"
     ```

@@ -1,0 +1,62 @@
+[
+  {
+    "feed": "https://spkrepo.007daver.workers.dev/",
+    "name": "007revad",
+    "enabled": true
+  },
+  {
+    "feed": "https://packages.synocommunity.com/",
+    "name": "SynoCommunity",
+    "enabled": true
+  },
+  {
+    "feed": "https://spk.privadmin.familyds.net/nas",
+    "name": "Spkrepo",
+    "enabled": true
+  },
+  {
+    "feed": "https://packages.pcloadletter.co.uk",
+    "name": "pcloadletter",
+    "enabled": true
+  },
+  {
+    "feed": "https://www.blisshq.com/repo/syno/packages-DSM7.json",
+    "name": "bliss",
+    "dsmver": "7",
+    "enabled": true
+  },
+  {
+    "feed": "https://www.blisshq.com/repo/syno/packages-pre-DSM7.json",
+    "name": "bliss",
+    "dsmver": "6",
+    "enabled": true
+  },
+  {
+    "feed": "https://spk.synologyitalia.com",
+    "name": "synologyitalia",
+    "enabled": true
+  },
+  {
+    "feed": "https://get.filebot.net/syno/",
+    "name": "filebot",
+    "dsmver": "7",
+    "enabled": true
+  },
+  {
+    "feed": "https://get.filebot.net/syno/dsm6.json",
+    "name": "filebot",
+    "dsmver": "6",
+    "enabled": true
+  },
+  {
+    "feed": "http://synology.sysco.ch/",
+    "name": "sysco",
+    "enabled": true
+  },
+  {
+    "feed": "https://spk7.imnks.com",
+    "name": "imnksdsm7",
+    "dsmver": "7",
+    "enabled": true
+  }
+ ]

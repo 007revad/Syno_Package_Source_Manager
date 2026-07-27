@@ -17,9 +17,17 @@
 ACTION="$1"
 shift
 
+# Get DSM major version - DSM 7 needs -s, DSM 6 must NOT have -s
+dsm=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
+if [[ "$dsm" -ge 7 ]]; then
+    WEBAPI_FLAG="-s"
+else
+    WEBAPI_FLAG=""
+fi
+
 case "$ACTION" in
 list)
-    synowebapi -s --exec api=SYNO.Core.Package.Feed method=list version=1
+    synowebapi "$WEBAPI_FLAG" --exec api=SYNO.Core.Package.Feed method=list version=1
     ;;
 
 add)
@@ -34,7 +42,7 @@ import json, sys
 obj = {'name': sys.argv[1], 'feed': sys.argv[2]}
 print(json.dumps(json.dumps(obj)))
 " "$NAME" "$FEED")
-    synowebapi -s --exec api=SYNO.Core.Package.Feed method=add version=1 list="${LIST_PARAM}"
+    synowebapi "$WEBAPI_FLAG" --exec api=SYNO.Core.Package.Feed method=add version=1 list="${LIST_PARAM}"
     ;;
 
 delete)
@@ -46,7 +54,7 @@ delete)
 import json, sys
 print(json.dumps(json.dumps(sys.argv[1:])))
 " "$@")
-    synowebapi -s --exec api=SYNO.Core.Package.Feed method=delete version=1 list="${LIST_PARAM}"
+    synowebapi "$WEBAPI_FLAG" --exec api=SYNO.Core.Package.Feed method=delete version=1 list="${LIST_PARAM}"
     ;;
 
 *)

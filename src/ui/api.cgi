@@ -17,6 +17,12 @@ LIVE_FILE="/usr/syno/etc/packages/feeds"
 MASTER_FILE="${LOG_DIR}/feeds"
 FEED_API_SCRIPT="${BIN_DIR}/feed_api.sh"
 
+# SCRIPT_DIR resolves to wherever api.cgi itself is running from, so
+# feeds_list (shipped alongside index.html/main.js/api.cgi in the ui
+# folder) is found without hard-coding a package path.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+FEEDS_LIST_FILE="${SCRIPT_DIR}/feeds_list"
+
 mkdir -p "${LOG_DIR}"
 touch "${LOG_FILE}"
 chmod 644 "${LOG_FILE}"
@@ -198,6 +204,75 @@ list)
         json_response true "Feeds loaded" "${DATA}"
     else
         json_response false "No feeds file found on this NAS" "[]"
+    fi
+    ;;
+
+catalog)
+    # Returns the bundled feeds_list, filtered to entries that are
+    # actually relevant to add right now:
+    #  - dsmver:"6" entries dropped on DSM 7+
+    #  - dsmver:"7" entries dropped on DSM <7
+    #  - entries whose feed URL already exists in MASTER_FILE (i.e.
+    #    already known to this package, enabled or not)
+    if [ ! -f "$FEEDS_LIST_FILE" ]; then
+        log "[ERROR] Bundled feeds_list not found at ${FEEDS_LIST_FILE}"
+        json_response false "Bundled feeds_list not found" "[]"
+        exit 0
+    fi
+
+    # DSM major version, read from the standard Synology VERSION file
+    # (sourced rather than parsed, so no extra tooling is required).
+    DSM_MAJOR=""
+    if [ -f /etc.defaults/VERSION ]; then
+        DSM_MAJOR="$(. /etc.defaults/VERSION 2>/dev/null; echo "$majorversion")"
+    fi
+    log "catalog: detected DSM majorversion='${DSM_MAJOR}'"
+
+    RESULT_JSON=$(DSM_MAJOR="${DSM_MAJOR}" FEEDS_LIST_FILE="${FEEDS_LIST_FILE}" MASTER_FILE="${MASTER_FILE}" python3 -c "
+import json, os
+
+def to_int(s):
+    try:
+        return int(s)
+    except Exception:
+        return None
+
+def normalize_feed(url):
+    # Trailing-slash-insensitive comparison - the same feed is often
+    # listed with and without one (e.g. 'nas' vs 'nas/') depending on
+    # source.
+    return (url or '').strip().rstrip('/')
+
+dsm_major = to_int(os.environ.get('DSM_MAJOR', ''))
+
+with open(os.environ['FEEDS_LIST_FILE']) as f:
+    catalog = json.load(f)
+
+existing_feeds = set()
+master_file = os.environ.get('MASTER_FILE', '')
+if master_file and os.path.exists(master_file):
+    with open(master_file) as f:
+        existing_feeds = {normalize_feed(m.get('feed')) for m in json.load(f)}
+
+available = []
+for entry in catalog:
+    dsmver = entry.get('dsmver')
+    if dsmver == '6' and (dsm_major is None or dsm_major >= 7):
+        continue
+    if dsmver == '7' and (dsm_major is not None and dsm_major < 7):
+        continue
+    if normalize_feed(entry.get('feed')) in existing_feeds:
+        continue
+    available.append(entry)
+
+print(json.dumps(available))
+" 2>>"${LOG_FILE}")
+
+    if [ -z "$RESULT_JSON" ]; then
+        log "[ERROR] catalog filtering produced no output"
+        json_response false "Failed to build available source list" ""
+    else
+        json_response true "Available sources loaded" "${RESULT_JSON}"
     fi
     ;;
 

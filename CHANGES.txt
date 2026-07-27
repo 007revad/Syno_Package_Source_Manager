@@ -1,2 +1,6 @@
+v1.0.6
+- Added an Add button to select a package source to add from a default list of known, working, package sources.
+- Bug fix for DSM 6.
+
 v1.0.5
 - First release.

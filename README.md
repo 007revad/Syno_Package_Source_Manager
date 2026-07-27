@@ -36,10 +36,15 @@ There are 2 ways to install the package:
 4. Select the .spk file and click Next.
 ### Screenshots
 
-<!--- <p align="center">Description of image 1 goes here</p> --->
-<p align="center"><kbd><img src="/images/window.png"></kbd></p>
+<p align="center">Add package source</p>
+<p align="center"><kbd><img src="/images/window3.png"></kbd></p>
 
-<!--- <br> --->
+<br>
 
-<!--- <p align="center">Description of image 2 goes here</p> --->
-<!--- <p align="center"><kbd><img src="/images/IMAGE_NAME.png"></kbd></p> --->
+<p align="center">On package source enabled and one disabled</p>
+<p align="center"><kbd><img src="/images/window2.png"></kbd></p>
+
+<br>
+
+<p align="center">Delete package source so it's no longer in the window. You can still Add it later</p>
+<p align="center"><kbd><img src="/images/window2b.png"></kbd></p>

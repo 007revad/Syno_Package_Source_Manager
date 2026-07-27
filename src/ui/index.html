@@ -36,6 +36,12 @@
             display: flex;
             flex-direction: column;
         }
+        .row-controls {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            flex-shrink: 0;
+        }
         .feed-name {
             font-weight: bold;
             color: #0066cc;
@@ -47,19 +53,17 @@
         }
         .delete-row-btn {
             flex-shrink: 0;
-            margin-left: 14px;
-            width: 22px;
-            height: 22px;
-            border: none;
+            padding: 5px 18px;
+            border: 1px solid #ccc;
             border-radius: 4px;
             background: transparent;
             color: #b00;
-            font-size: 15px;
-            font-weight: bold;
+            font-size: 13px;
             line-height: 1;
             cursor: pointer;
         }
         .delete-row-btn:hover {
+            border: 1px solid #b00;
             background: #ffe0e0;
         }
         /* Toggle switch */
@@ -69,7 +73,6 @@
             width: 46px;
             height: 24px;
             flex-shrink: 0;
-            margin-left: 20px;
         }
         .switch input {
             opacity: 0;
@@ -103,9 +106,14 @@
         }
         .actions {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
             gap: 10px;
             margin: 20px;
+        }
+        .actions-right {
+            display: flex;
+            gap: 10px;
         }
         button {
             padding: 5px 18px;
@@ -114,26 +122,100 @@
             font-size: 13px;
             font-weight: bold;
         }
-        #saveBtn {
+        #saveBtn, #addModalConfirm {
             border: none;
             background-color: #1B8AED;
             color: white;
         }
-        #saveBtn:hover {
+        #saveBtn:hover, #addModalConfirm {
             background-color: #057FEB;
         }
-        #cancelBtn {
+        #cancelBtn, #addBtn, #addModalCancel {
             border: 1px solid #ccc;
             background-color: white;
             color: #333;
         }
-        #cancelBtn:hover {
+        #cancelBtn:hover, #addBtn:hover, #addModalCancel:hover {
             border: 1px solid #aaa;
             background-color: #f0f0f0;
         }
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
+        }
+        /* Add-sources modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        .modal {
+            background: white;
+            width: 90%;
+            max-width: 480px;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .modal-close {
+            border: none;
+            background: transparent;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            color: #777;
+            padding: 0 4px;
+        }
+        .modal-body {
+            padding: 10px 16px;
+            overflow-y: auto;
+        }
+        .modal-body p {
+            color: #777;
+            font-size: 13px;
+        }
+        .catalog-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .catalog-row:last-child {
+            border-bottom: none;
+        }
+        .catalog-row input[type="checkbox"] {
+            margin-top: 3px;
+        }
+        .catalog-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 16px;
+            border-top: 1px solid #e0e0e0;
         }
         .status {
             margin: 0 20px 20px 20px;
@@ -175,8 +257,25 @@
         <div class="status" id="status"></div>
 
         <div class="actions">
-            <button id="cancelBtn">Cancel</button>
-            <button id="saveBtn">Save</button>
+            <button id="addBtn">Add</button>
+            <div class="actions-right">
+                <button id="cancelBtn">Cancel</button>
+                <button id="saveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="addModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Add Package Sources</span>
+                <button class="modal-close" id="addModalClose">&times;</button>
+            </div>
+            <div class="modal-body" id="addModalBody">Loading available sources...</div>
+            <div class="modal-footer">
+                <button id="addModalCancel">Cancel</button>
+                <button id="addModalConfirm">Add Selected</button>
+            </div>
         </div>
     </div>
 

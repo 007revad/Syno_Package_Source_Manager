@@ -58,7 +58,7 @@
     "name": "imnksdsm7",
     "dsmver": "7",
     "enabled": true
-  }
+  },
   {
     "feed": "https://digitalbox.go.zd.fr/",
     "name": "digitalbox",

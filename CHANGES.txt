@@ -1,3 +1,6 @@
+v1.0.8
+- Bug fix for "Failed to load available source list" introduced in v1.0.7. Issue #1.
+
 v1.0.7
 - Added https://digitalbox.go.zd.fr/ as an addable package source.
 

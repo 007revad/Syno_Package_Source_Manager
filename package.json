@@ -1,7 +1,7 @@
 {
   "package": "SourceManager",
   "name": "SourceManager",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Synology package that allows you disable and enable community package sources you have added to Package Center, and add known working package sources",
   "target": "./src",
   "install_type": "package",

@@ -4,7 +4,15 @@ PKG_NAME=$(basename "$SYNOPKG_PKGDEST")
 TARGET_DIR="/var/packages/$PKG_NAME/target"
 UI_DIR="$TARGET_DIR/ui"
 BIN_DIR="$TARGET_DIR/bin"
-VAR_DIR="/var/packages/$PKG_NAME/var"
+SBIN_DIR="$TARGET_DIR/sbin"
+
+# Get DSM major version
+dsm=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
+if [[ $dsm -ge 7 ]]; then
+    VAR_DIR="/var/packages/${PKG_NAME}/var"
+else
+    VAR_DIR="/var/packages/${PKG_NAME}/etc"
+fi
 
 LIVE_FILE="/usr/syno/etc/packages/feeds"
 MASTER_FILE="$VAR_DIR/feeds"
@@ -14,10 +22,10 @@ log_message() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$VAR_DIR/install.log" 2>/dev/null || echo "$1"
 }
 
-# Create var directory for logs and the master feeds file
-mkdir -p "$VAR_DIR" || { echo "Error: Failed to create VAR_DIR"; exit 1; }
+echo "" >> "$VAR_DIR/install.log"
 
 log_message "Post-installation starting for package: $PKG_NAME"
+log_message "Running postinst as: $(whoami) (uid=$(id -u))"
 
 # Remove spurious files injected by the package builder
 rm -f "$UI_DIR/Makefile"
@@ -27,38 +35,48 @@ log_message "Removed spurious package builder files"
 
 # Set execute permissions
 chmod +x "$UI_DIR/api.cgi" 2>/dev/null
+log_message "Set execute permissions for api.cgi"
 chmod +x "$BIN_DIR/feed_api.sh" 2>/dev/null
-log_message "Set execute permissions for api.cgi and feed_api.sh"
+log_message "Set execute permissions for feed_api.sh"
 
-# Bootstrap the master feeds file from the live file, only if we don't
-# already have a master copy (so we never clobber an existing master
-# on upgrade). Every entry gets "enabled": true since it's currently
-# live in the real feeds file.
-if [ -f "$LIVE_FILE" ] && [ ! -f "$MASTER_FILE" ]; then
-    if python3 -c "
-import json
-with open('$LIVE_FILE') as f:
-    data = json.load(f)
-for entry in data:
-    entry['enabled'] = True
-with open('$MASTER_FILE', 'w') as f:
-    json.dump(data, f, indent=2)
-"; then
-        chmod 644 "$MASTER_FILE"
-        log_message "Bootstrapped master feeds file from $LIVE_FILE"
+
+# Lock down feed_api.sh
+chmod 555 "$BIN_DIR/feed_api.sh" 2>/dev/null         # Blocks injection exploit
+log_message "Secured feed_api.sh"
+
+# Lock down bin, sbin and helper folders
+# Must be after "chmod 555" and "chmod +x" for files in these folders
+chmod 555 "$BIN_DIR" 2>/dev/null                     # Blocks delete/recreate exploit
+chmod 555 "$SBIN_DIR" 2>/dev/null                    # Blocks delete/recreate exploit
+chmod 555 "$TARGET_DIR/bin/helper" 2>/dev/null       # Blocks delete/recreate/rename exploit
+log_message "Secured bin, sbin and helper folders"
+
+# Lock down ui/ folder itself, so api.cgi (and the other served files
+# directly inside ui/) can't be deleted/renamed/replaced by the
+# SourceManager-owned files they still are post-install.
+# Must be after "chmod +x" for api.cgi above.
+# NOTE: this only locks entries directly inside $UI_DIR - subfolders
+# such as ui/config, ui/help, ui/images, ui/texts keep their own
+# permissions and are unaffected. If any of those subfolders need to
+# stay writable at runtime (e.g. a cache or user-editable config
+# dir), leave them out of this pass - confirm before extending it.
+chmod 555 "$UI_DIR" 2>/dev/null                      # Blocks delete/recreate/rename exploit
+log_message "Secured ui folder"
+
+# Lock down target folder
+# Must be the last command (apart from logging and sourcemanager-helper)
+chmod 555 "/var/packages/${PKG_NAME}/target" 2>/dev/null   # Blocks delete/recreate/rename exploit
+
+if [[ $dsm -ge 7 ]]; then
+    HELPER="$TARGET_DIR/bin/helper/sourcemanager-helper"
+    if [[ -u "$HELPER" ]]; then
+        "$HELPER" selfheal >/dev/null 2>&1
+        log_message "Triggered self-heal via helper"
     else
-        log_message "Warning: Failed to bootstrap master feeds file from $LIVE_FILE"
-        ERRORS="1"
+        log_message "Helper not yet setuid-root - self-heal deferred to first UI open"
     fi
-elif [ ! -f "$LIVE_FILE" ]; then
-    log_message "Warning: $LIVE_FILE not found, nothing to bootstrap"
 fi
 
-# NOTE: sudoers grant is NOT created here. postinst is not reliably
-# running as root on DSM 7 (see set_package_permissions.md), so the
-# NOPASSWD grant that lets api.cgi write the live feeds file as root
-# has to be set up manually (SSH or Task Scheduler), same as your
-# other packages.
 
 if [ -z "$ERRORS" ]; then
     log_message "Post-installation completed successfully"

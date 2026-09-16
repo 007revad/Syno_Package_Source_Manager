@@ -1,3 +1,12 @@
-#!/bin/sh
+#!/bin/bash
+
+PKG_NAME=$(basename "$SYNOPKG_PKGDEST")
+TARGET_DIR="/var/packages/$PKG_NAME/target"
+BIN_DIR="$TARGET_DIR/bin"
+SBIN_DIR="$TARGET_DIR/sbin"
+
+# Allow uninstall to delete bin and sbin
+chmod 755 "$BIN_DIR" 2>/dev/null
+chmod 755 "$SBIN_DIR/sbin" 2>/dev/null
 
 exit 0

@@ -30,6 +30,7 @@ There are 2 ways to install the package:
 2. In Package Center click on Manual Install.
 3. Browse to where you downloaded the .spk file.
 4. Select the .spk file and click Next.
+
 ### Screenshots
 
 <p align="center">Add package source</p>

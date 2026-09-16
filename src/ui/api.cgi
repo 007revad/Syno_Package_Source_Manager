@@ -7,10 +7,16 @@
 
 PKG_NAME="SourceManager"
 PKG_ROOT="/var/packages/${PKG_NAME}"
-PKG_VERSION=$(synopkg version "$PKG_NAME")
+#PKG_VERSION=$(synopkg version "$PKG_NAME")  # 0.3 seconds slower
+PKG_VERSION=$(synogetkeyvalue "${PKG_ROOT}/INFO" version)
 TARGET_DIR="${PKG_ROOT}/target"
 BIN_DIR="${TARGET_DIR}/bin"
-LOG_DIR="${PKG_ROOT}/var"
+DSM=$(get_key_value /etc.defaults/VERSION majorversion)
+if [[ "$DSM" -gt "6" ]]; then
+    LOG_DIR="/var/packages/$PKG_NAME/var"
+else
+    LOG_DIR="/var/packages/$PKG_NAME/etc"
+fi
 LOG_FILE="${LOG_DIR}/api.log"
 
 LIVE_FILE="/usr/syno/etc/packages/feeds"
@@ -21,6 +27,7 @@ FEED_API_SCRIPT="${BIN_DIR}/feed_api.sh"
 # feeds_list (shipped alongside index.html/main.js/api.cgi in the ui
 # folder) is found without hard-coding a package path.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# feeds_list source info: https://synopackage.com/sources
 FEEDS_LIST_FILE="${SCRIPT_DIR}/feeds_list"
 
 mkdir -p "${LOG_DIR}"

@@ -1,5 +1,8 @@
 ## How to set the package permissions
 
+**NOTE:**
+Only versions older than v2.0.9 need these steps.
+
 There are 2 ways you can set the required permissions for the package.
 
 ### Set package permissions via SSH
@@ -29,7 +32,7 @@ cat "$file"
     pkg=SourceManager
     file=/etc/sudoers.d/SourceManager
     script=/var/packages/SourceManager/target/bin/feed_api.sh
-    echo "$pkg ALL=(root) NOPASSWD: $script" list > "$file"
+    echo "$pkg ALL=(root) NOPASSWD: $script list" > "$file"
     echo "$pkg ALL=(root) NOPASSWD: $script add *" >> "$file"
     echo "$pkg ALL=(root) NOPASSWD: $script delete *" >> "$file"
     chmod 0440 "$file"

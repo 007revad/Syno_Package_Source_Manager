@@ -8,7 +8,9 @@
       "appWindow": "SYNO.SDS.SourceManager.MainWindow",
       "allowMultiInstance": false,
       "allowStandalone": true,
-      "allUsers": true
+      "allUsers": true,
+      "grantPrivilege": "all",
+      "advanceGrantPrivilege": true
     },
     "SYNO.SDS.SourceManager.MainWindow": {
       "type": "lib",

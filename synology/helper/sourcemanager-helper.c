@@ -23,7 +23,7 @@
 
 int main(int argc, char *argv[])
 {
-    const char *no_arg[]  = { "list", "selfheal", NULL };
+    const char *no_arg[]  = { "list", "selfheal", "save", NULL };
     const char *two_arg[] = { "add", NULL };
     const char *var_arg[] = { "delete", NULL };  /* 1..MAX_DELETE_ARGS extra args */
 

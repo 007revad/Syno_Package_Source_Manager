@@ -68,24 +68,26 @@ self_heal() {
     for f in "$BIN_DIR"/*.sh "$BIN_DIR"/*.py "$0"; do
         [[ -f "$f" ]] || continue
         owner="$(stat -c '%U' "$f" 2>/dev/null)"
-        if [[ "$owner" != "root" ]]; then
+        mode="$(stat -c '%a' "$f" 2>/dev/null)"
+        if [[ "$owner" != "root" || "$mode" != "555" ]]; then
             chown root:root "$f" 2>/dev/null
             chmod 555 "$f" 2>/dev/null
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] SourceManager: self-heal secured $f (was owned by $owner)" \
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] SourceManager: self-heal secured $f (was $owner:$mode)" \
                 >> "${API_LOG_FILE}" 2>/dev/null
         fi
     done
 
     # feeds is data, not code - root still writes it on every
-    # save. 600 rather than 555: no group/other bits at all, since
+    # save. 644 rather than 555: no group/other bits at all, since
     # root bypasses the mode entirely and the only thing left to
     # control is whether SourceManager can read config values.
     if [[ -f "$FEEDS_FILE" ]]; then
         owner="$(stat -c '%U' "$FEEDS_FILE" 2>/dev/null)"
-        if [[ "$owner" != "root" ]]; then
+        mode="$(stat -c '%a' "$FEEDS_FILE" 2>/dev/null)"
+        if [[ "$owner" != "root" || "$mode" != "644" ]]; then
             chown root:root "$FEEDS_FILE" 2>/dev/null
-            chmod 600 "$FEEDS_FILE" 2>/dev/null
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] SourceManager: self-heal secured $FEEDS_FILE (was owned by $owner)" \
+            chmod 644 "$FEEDS_FILE" 2>/dev/null
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] SourceManager: self-heal secured $FEEDS_FILE (was $owner:$mode)" \
                 >> "${API_LOG_FILE}" 2>/dev/null
         fi
     fi
@@ -151,6 +153,92 @@ import json, sys
 print(json.dumps(json.dumps(sys.argv[1:])))
 " "$@")
     synowebapi "$WEBAPI_FLAG" --exec api=SYNO.Core.Package.Feed method=delete version=1 list="${LIST_PARAM}"
+    ;;
+
+save)
+    # Feed data arrives on stdin as a JSON array of
+    # {"feed":"...","name":"...","enabled":true|false}. This whole
+    # action runs as root (only ever invoked via
+    # sourcemanager-helper), since it writes $FEEDS_FILE (root:root
+    # 644 - the unprivileged SourceManager account can't be trusted
+    # to write it directly) and calls synowebapi, which itself
+    # requires root regardless of caller.
+    RAW_DATA="$(cat)"
+    if [ -z "$RAW_DATA" ]; then
+        echo '{"success":false,"error":{"message":"save requires feed data on stdin"}}' >&2
+        exit 1
+    fi
+
+    TMP_MASTER="${VAR_DIR}/feeds.tmp"
+    if ! RAW_DATA="$RAW_DATA" TMP_MASTER="$TMP_MASTER" python3 -c "
+import json, os
+data = json.loads(os.environ['RAW_DATA'])
+with open(os.environ['TMP_MASTER'], 'w') as f:
+    json.dump(data, f, indent=2)
+" 2>>"${API_LOG_FILE}"; then
+        echo '{"success":false,"error":{"message":"invalid feeds data"}}' >&2
+        exit 1
+    fi
+    mv "${TMP_MASTER}" "${FEEDS_FILE}"
+    chown root:root "${FEEDS_FILE}"
+    chmod 644 "${FEEDS_FILE}"
+
+    LIVE_LIST="$(synowebapi "$WEBAPI_FLAG" --exec api=SYNO.Core.Package.Feed method=list version=1)"
+
+    RAW_DATA="$RAW_DATA" LIVE_LIST="$LIVE_LIST" WEBAPI_FLAG="$WEBAPI_FLAG" python3 -c "
+import json, os, subprocess
+
+data = json.loads(os.environ['RAW_DATA'])
+target_enabled = {e['feed']: e['name'] for e in data if e.get('enabled', True)}
+
+try:
+    listing = json.loads(os.environ['LIVE_LIST'])
+except Exception:
+    listing = {'success': False}
+
+if not listing.get('success'):
+    print(json.dumps({
+        'success': False,
+        'message': 'Saved locally, but could not read the live feed list from DSM.'
+    }))
+    raise SystemExit(0)
+
+current_feeds = {item['feed'] for item in listing.get('data', {}).get('items', [])}
+to_delete = [f for f in current_feeds if f not in target_enabled]
+to_add = [(name, feed) for feed, name in target_enabled.items() if feed not in current_feeds]
+
+flag = os.environ.get('WEBAPI_FLAG', '')
+base = ['synowebapi'] + ([flag] if flag else [])
+
+def run_webapi(list_param, method):
+    cmd = base + ['--exec', 'api=SYNO.Core.Package.Feed', f'method={method}', 'version=1', f'list={list_param}']
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        return proc.returncode, json.loads(proc.stdout)
+    except Exception:
+        return proc.returncode, {'success': False, 'error': {'message': proc.stderr.strip() or 'no output'}}
+
+errors = []
+
+if to_delete:
+    list_param = json.dumps(json.dumps(to_delete))
+    rc, res = run_webapi(list_param, 'delete')
+    if rc != 0 or not res.get('success'):
+        errors.append('delete failed: ' + json.dumps(res.get('error', res)))
+
+for name, feed in to_add:
+    list_param = json.dumps(json.dumps({'name': name, 'feed': feed}))
+    rc, res = run_webapi(list_param, 'add')
+    if rc != 0 or not res.get('success'):
+        errors.append(f'add failed for {name!r}: ' + json.dumps(res.get('error', res)))
+
+if errors:
+    print(json.dumps({'success': False, 'message': 'Feeds saved locally, but DSM rejected some changes: ' + '; '.join(errors)}))
+else:
+    changed = len(to_delete) + len(to_add)
+    msg = 'Feeds saved' if changed else 'Feeds saved (no source changes needed)'
+    print(json.dumps({'success': True, 'message': msg}))
+"
     ;;
 
 *)

@@ -1,3 +1,12 @@
+v2.0.10
+- Changed to no longer need the user to set elevated permissions.
+  - Installation deletes the old sudoers file if it exists.
+- Now adds itself to DSM 7's "Control Panel > Application Permissions" with only Administrators allowed to see or run the package.
+  - You can the permissions in "Control Panel > Application Permissions".
+- Changed to be secure against possible exploits.
+- Bug fix for not requring python3 installed in DSM 6.
+- Bug fix DSM 6.
+
 v2.0.9
 - Changed to no longer need the user to set elevated permissions.
   - Installation deletes the old sudoers file if it exists.

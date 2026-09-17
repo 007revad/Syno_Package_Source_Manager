@@ -22,6 +22,7 @@ LOG_FILE="${LOG_DIR}/api.log"
 LIVE_FILE="/usr/syno/etc/packages/feeds"
 MASTER_FILE="${LOG_DIR}/feeds"
 FEED_API_SCRIPT="${BIN_DIR}/feed_api.sh"
+HELPER_BIN="${BIN_DIR}/helper/sourcemanager-helper"
 
 # SCRIPT_DIR resolves to wherever api.cgi itself is running from, so
 # feeds_list (shipped alongside index.html/main.js/api.cgi in the ui

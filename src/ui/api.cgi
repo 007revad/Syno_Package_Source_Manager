@@ -39,6 +39,19 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "${LOG_FILE}"
 }
 
+# DSM6: the package process itself already runs as root under the
+# old privilege model, so api.cgi can call feed_api.sh directly -
+# there's no setuid helper built/installed for DSM6, and none is
+# needed. DSM7+: api.cgi runs as the unprivileged SourceManager
+# account, so privileged actions must go through the setuid helper.
+run_privileged() {
+    if [[ "$DSM" -ge 7 ]]; then
+        "${HELPER_BIN}" "$@"
+    else
+        "${FEED_API_SCRIPT}" "$@"
+    fi
+}
+
 # --------- 2. HTTP header output --------------------------------
 
 echo "Content-Type: application/json; charset=utf-8"
@@ -126,7 +139,7 @@ with open('$MASTER_FILE', 'w') as f:
 # sudoers not set up yet), falls back to whatever the master file
 # already has rather than blocking the UI.
 reconcile_master_file() {
-    LIVE_LIST="$("${HELPER_BIN}" list 2>>"${LOG_FILE}")"
+    LIVE_LIST="$(run_privileged list 2>>"${LOG_FILE}")"
     MASTER_FILE="${MASTER_FILE}" LIVE_LIST="${LIVE_LIST}" python3 -c "
 import json, os
 
@@ -290,7 +303,7 @@ save)
     # the unprivileged SourceManager account) and the live DSM
     # reconciliation now happen inside feed_api.sh's own 'save' case,
     # run as root via the setuid helper.
-    RESULT_JSON="$(echo "$RAW_DATA" | "${HELPER_BIN}" save 2>>"${LOG_FILE}")"
+    RESULT_JSON="$(echo "$RAW_DATA" | run_privileged save 2>>"${LOG_FILE}")"
 
     if [ -z "$RESULT_JSON" ]; then
         log "[ERROR] feed save/reconciliation produced no output"

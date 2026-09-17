@@ -4,7 +4,7 @@ v2.0.9
 - Now adds itself to DSM 7's "Control Panel > Application Permissions" with only Administrators allowed to see or run the package.
   - You can the permissions in "Control Panel > Application Permissions".
 - Changed to be secure against possible exploits.
-- Bug fix for not installing python3 in DSM 6 if python3 not installed.
+- Bug fix for not requring python3 installed in DSM 6.
 
 v1.0.8
 - Bug fix for "Failed to load available source list" introduced in v1.0.7. Issue #1.

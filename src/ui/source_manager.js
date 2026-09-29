@@ -19,8 +19,31 @@ Ext.define("SYNO.SDS.SourceManager.MainWindow", {
             showHelp: false,
             width: 800,
             height: 600,
-            html: '<iframe src="webman/3rdparty/SourceManager/index.html?_ts=' + new Date().getTime() + '" style="width:100%;height:100%;border:none;margin:0;"></iframe>'
+            html: '<iframe src="webman/3rdparty/SourceManager/index.html?_ts=' + new Date().getTime() + '" style="width:100%;height:100%;border:none;margin:0;"></iframe>',
+            listeners: {
+                afterrender: {
+                    fn: this.onAfterRender,
+                    scope: this
+                }
+            }
         }, a));
+    },
+    // Clicks inside the iframe never reach DSM's window manager, so forward them
+    onAfterRender: function() {
+        var me = this;
+        var frame = this.body.dom.querySelector("iframe");
+        if (!frame) {
+            return;
+        }
+        var attach = function() {
+            try {
+                frame.contentWindow.document.addEventListener("mousedown", function() {
+                    me.toFront();
+                }, true);
+            } catch (e) {}
+        };
+        frame.addEventListener("load", attach);
+        attach();
     },
     onClose: function() {
         SYNO.SDS.SourceManager.MainWindow.superclass.onClose.apply(this, arguments);

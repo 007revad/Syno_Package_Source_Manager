@@ -1,3 +1,7 @@
+v2.0.11
+- Changed so if another window is on top clicking anywhere in the visible part of Package Source Manager's window brings it to the front.
+  - Previously you had to click the Package Source Manager window's title bar.
+
 v2.0.10
 - Changed to no longer need the user to set elevated permissions.
   - Installation deletes the old sudoers file if it exists.

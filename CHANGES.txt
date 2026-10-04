@@ -1,3 +1,7 @@
+v2.0.12
+- Added https://rabitpos.com/synology/ as an addable package source.
+- Bug fix for DSM 7 not showing new sources manually added in Package Center. 
+
 v2.0.11
 - Changed so if another window is on top clicking anywhere in the visible part of Package Source Manager's window brings it to the front.
   - Previously you had to click the Package Source Manager window's title bar.

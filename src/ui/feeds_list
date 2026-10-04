@@ -15,6 +15,11 @@
     "enabled": true
   },
   {
+    "feed": "https://rabitpos.com/synology/",
+    "name": "RabitPOS",
+    "enabled": true
+  },
+  {
     "feed": "https://packages.pcloadletter.co.uk",
     "name": "pcloadletter",
     "enabled": true

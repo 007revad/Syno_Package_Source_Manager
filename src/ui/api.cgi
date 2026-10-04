@@ -140,7 +140,7 @@ with open('$MASTER_FILE', 'w') as f:
 # already has rather than blocking the UI.
 reconcile_master_file() {
     LIVE_LIST="$(run_privileged list 2>>"${LOG_FILE}")"
-    MASTER_FILE="${MASTER_FILE}" LIVE_LIST="${LIVE_LIST}" python3 -c "
+    NEW_MASTER="$(MASTER_FILE="${MASTER_FILE}" LIVE_LIST="${LIVE_LIST}" python3 -c "
 import json, os
 
 master_file = os.environ['MASTER_FILE']
@@ -189,11 +189,14 @@ for i, m in enumerate(updated):
     if i not in consumed and m.get('enabled', True):
         m['enabled'] = False
 
+# Only emit when something changed; the caller writes it as root.
 if updated != master:
-    with open(master_file, 'w') as f:
-        json.dump(updated, f, indent=2)
-    os.chmod(master_file, 0o644)
-" 2>>"${LOG_FILE}"
+    print(json.dumps(updated))
+" 2>>"${LOG_FILE}")"
+
+    if [ -n "$NEW_MASTER" ]; then
+        echo "$NEW_MASTER" | run_privileged save >/dev/null 2>>"${LOG_FILE}"
+    fi
 }
 
 # --------- 5. Action processing ---------------------------------

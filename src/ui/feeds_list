@@ -20,6 +20,11 @@
     "enabled": true
   },
   {
+    "feed": "https://nas.dante90.mmv.kr/",
+    "name": "PeterSuh-Q3",
+    "enabled": true
+  },
+  {
     "feed": "https://packages.pcloadletter.co.uk",
     "name": "pcloadletter",
     "enabled": true

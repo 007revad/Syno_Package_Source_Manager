@@ -19,6 +19,8 @@ Ext.define("SYNO.SDS.SourceManager.MainWindow", {
             showHelp: false,
             width: 800,
             height: 600,
+            minWidth: 800,
+            minHeight: 600,
             html: '<iframe src="webman/3rdparty/SourceManager/index.html?_ts=' + new Date().getTime() + '" style="width:100%;height:100%;border:none;margin:0;"></iframe>',
             listeners: {
                 afterrender: {

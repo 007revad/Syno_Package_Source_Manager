@@ -1,3 +1,7 @@
+v2.0.14
+- Set minimum package window width and height.
+- Added https://nas.dante90.mmv.kr/ as an addable package source.
+
 v2.0.13
 - Added https://rabitpos.com/synology/ as an addable package source.
 - Bug fix for not showing new sources manually added in Package Center in DSM 7. 

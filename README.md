@@ -34,11 +34,11 @@ There are 2 ways to install the package:
 ### Screenshots
 
 <p align="center">Add package source</p>
-<p align="center"><kbd><img src="/images/window3.png"></kbd></p>
+<p align="center"><kbd><img src="/images/window4.png"></kbd></p>
 
 <br>
 
-<p align="center">On package source enabled and one disabled</p>
+<p align="center">One package source enabled and one disabled</p>
 <p align="center"><kbd><img src="/images/window2.png"></kbd></p>
 
 <br>

@@ -5,6 +5,7 @@ env:
   REPO_NAME: "Syno_Package_Source_Manager"
   SPK_PREFIX: "Source_Manager"
   HELPER_NAME: "sourcemanager"
+  MAIN_JS_NAME: "source_manager"
 
   # --- Runner config, shouldn't need to change ---
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -85,6 +86,19 @@ jobs:
             *) echo "::error::No display label mapped for arch '${{ matrix.arch }}'"; exit 1 ;;
           esac
           echo "label=$label" >> $GITHUB_OUTPUT
+
+      - name: Version-stamp main.js filename
+        # Also edits config to match new main.js file name
+        # Forces DSM to load current file and not cached file after package update
+        if: steps.check_assets.outputs.spk_count == '0'
+        run: |
+          set -euo pipefail
+          version="${{ steps.get_latest_tag.outputs.new_tag }}"
+          version="${version#v}"   # v1.0.27 -> 1.0.27, to match SYNOPKG_PKGVER
+          mv src/ui/${MAIN_JS_NAME}.js "src/ui/${MAIN_JS_NAME}-${version}.js"
+          sed -i "s/\"${MAIN_JS_NAME}\.js\":/\"${MAIN_JS_NAME}-${version}.js\":/" src/ui/config
+          grep -q "\"${MAIN_JS_NAME}-${version}\.js\"" src/ui/config \
+          || { echo "::error::config was not updated with ${MAIN_JS_NAME}-${version}.js"; exit 1; }
 
       - name: Synology Package Builder Github Action
         if: steps.check_assets.outputs.spk_count == '0'

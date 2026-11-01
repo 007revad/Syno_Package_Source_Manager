@@ -6,6 +6,9 @@ UI_DIR="$TARGET_DIR/ui"
 BIN_DIR="$TARGET_DIR/bin"
 SBIN_DIR="$TARGET_DIR/sbin"
 
+# Get OS name
+os_name=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf os_name)
+
 # Get DSM major version
 dsm=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
 if [ "$dsm" -ge 7 ]; then
@@ -38,6 +41,40 @@ chmod +x "$UI_DIR/api.cgi" 2>/dev/null
 log_message "Set execute permissions for api.cgi"
 chmod +x "$BIN_DIR/feed_api.sh" 2>/dev/null
 log_message "Set execute permissions for feed_api.sh"
+
+
+# SRM only: its BusyBox has no bash, so the SRM package bundles static bash
+# binaries and its scripts use #!/var/packages/SourceManager/target/bin/bash
+# The DSM 6 and DSM 7 packages don't contain these files, so this is skipped.
+# Run each candidate and keep the first one that works on this CPU/userland,
+# then point bin/bash at it and delete the unused one.
+if [ "$os_name" = SRM ]; then
+    if [ -e "$BIN_DIR/bash-armv7-hf-static" ] || [ -e "$BIN_DIR/bash-aarch64-static" ]; then
+        case "$(uname -m)" in
+            aarch64|arm64) bash_candidates="bash-aarch64-static bash-armv7-hf-static" ;;
+            *)             bash_candidates="bash-armv7-hf-static bash-aarch64-static" ;;
+        esac
+        bundled_bash=""
+        for c in $bash_candidates; do
+            [ -f "$BIN_DIR/$c" ] || continue
+            chmod 555 "$BIN_DIR/$c"
+            if "$BIN_DIR/$c" -c ':' >/dev/null 2>&1; then
+                bundled_bash="$c"
+                break
+            fi
+        done
+        if [ -n "$bundled_bash" ]; then
+            ln -sf "$bundled_bash" "$BIN_DIR/bash"
+            for c in bash-armv7-hf-static bash-aarch64-static; do
+                [ "$c" = "$bundled_bash" ] || rm -f "$BIN_DIR/$c"
+            done
+            log_message "Using bundled bash: $bundled_bash ($("$BIN_DIR/bash" --version | head -n 1))"
+        else
+            ERRORS=1
+            log_message "ERROR: no bundled bash runs on this system (uname -m: $(uname -m))"
+        fi
+    fi
+fi
 
 
 # Lock down feed_api.sh

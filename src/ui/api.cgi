@@ -19,6 +19,10 @@ else
 fi
 LOG_FILE="${LOG_DIR}/api.log"
 
+if ! : >> "${LOG_FILE}" 2>/dev/null; then
+    LOG_FILE="/dev/null"
+fi
+
 LIVE_FILE="/usr/syno/etc/packages/feeds"
 MASTER_FILE="${LOG_DIR}/feeds"
 FEED_API_SCRIPT="${BIN_DIR}/feed_api.sh"

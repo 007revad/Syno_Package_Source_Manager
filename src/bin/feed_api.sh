@@ -34,6 +34,16 @@ FEEDS_FILE="${VAR_DIR}/feeds"
 LOG_FILE="${VAR_DIR}/sourcemanager.log"
 API_LOG_FILE="${VAR_DIR}/api.log"
 
+log_api() {
+    [[ -L "$API_LOG_FILE" ]] && return
+    if [[ ! -e "$API_LOG_FILE" ]]; then
+        : > "$API_LOG_FILE"
+        chown "${PKG_NAME}:${PKG_NAME}" "$API_LOG_FILE"
+        chmod 644 "$API_LOG_FILE"
+    fi
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$API_LOG_FILE" 2>/dev/null
+}
+
 # ---------------------------------------------------------------------
 # Self-heal file ownership.
 #
@@ -74,8 +84,7 @@ self_heal() {
         if [[ "$owner" != "root" || "$mode" != "555" ]]; then
             chown root:root "$f" 2>/dev/null
             chmod 555 "$f" 2>/dev/null
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] SourceManager: self-heal secured $f (was $owner:$mode)" \
-                >> "${API_LOG_FILE}" 2>/dev/null
+            log_api "SourceManager: self-heal secured $f (was $owner:$mode)"
         fi
     done
 
@@ -89,8 +98,7 @@ self_heal() {
         if [[ "$owner" != "root" || "$mode" != "644" ]]; then
             chown root:root "$FEEDS_FILE" 2>/dev/null
             chmod 644 "$FEEDS_FILE" 2>/dev/null
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] SourceManager: self-heal secured $FEEDS_FILE (was $owner:$mode)" \
-                >> "${API_LOG_FILE}" 2>/dev/null
+            log_api "SourceManager: self-heal secured $FEEDS_FILE (was $owner:$mode)"
         fi
     fi
 
@@ -107,8 +115,7 @@ self_heal() {
     SUDOERS_FILE="/etc/sudoers.d/${PKG_NAME}"
     if [[ -f "$SUDOERS_FILE" ]]; then
         rm -f "$SUDOERS_FILE"
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] SourceManager: self-heal removed leftover sudoers file $SUDOERS_FILE" \
-            >> "${API_LOG_FILE}" 2>/dev/null
+        log_api "SourceManager: self-heal removed leftover sudoers file $SUDOERS_FILE"
     fi
 }
 

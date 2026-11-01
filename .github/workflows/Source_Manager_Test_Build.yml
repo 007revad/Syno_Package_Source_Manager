@@ -72,6 +72,19 @@ jobs:
           esac
           echo "label=$label" >> $GITHUB_OUTPUT
 
+      # NEW: what actually goes in INFO's arch= field
+      - name: Map arch to INFO install-arch list
+        id: install_arch
+        run: |
+          case "${{ matrix.arch }}" in
+            kvmx64) archlist="x86_x64" ;;
+            rtd1296) archlist="armv8" ;;
+            armada38x) archlist="alpine alpine4k armada370 armada375 armada38x armadaxp monaco comcerto2k" ;;
+            evansport) archlist="evansport" ;;
+            *) echo "::error::No install-arch list mapped for '${{ matrix.arch }}'"; exit 1 ;;
+          esac
+          echo "archlist=$archlist" >> $GITHUB_OUTPUT
+
       - name: Version-stamp main.js filename
         # Also edits config to match new main.js file name
         # Forces DSM to load current file and not cached file after package update
@@ -83,6 +96,21 @@ jobs:
           sed -i "s/\"${MAIN_JS_NAME}\.js\":/\"${MAIN_JS_NAME}-${version}.js\":/" src/ui/config
           grep -q "\"${MAIN_JS_NAME}-${version}\.js\"" src/ui/config \
           || { echo "::error::config was not updated with ${MAIN_JS_NAME}-${version}.js"; exit 1; }
+
+      # SRM 1.3 has no bash (BusyBox ash only), so the SRM package bundles
+      # static bash 5.2 binaries (armv7-hf and aarch64). They live in srm/bash/
+      # in the repo, outside src/, so the package builder never puts them in
+      # the DSM 6/7 packages. Fail early if one is missing.
+      - name: Check SRM bundled binaries
+        if: steps.check_assets.outputs.spk_count == '0' && matrix.arch == 'kvmx64'
+        run: |
+          set -euo pipefail
+          for f in srm/bash/bash-armv7-hf-static srm/bash/bash-aarch64-static; do
+            if [ ! -f "$f" ]; then
+              echo "::error::$f is missing"
+              exit 1
+            fi
+          done
 
       - name: Synology Package Builder Github Action
         uses: 007revad/synology-package-builder@main
@@ -104,7 +132,7 @@ jobs:
             kvmx64)    expect_arch="x86-64" ;;
             rtd1296)   expect_arch="ARM aarch64" ;;
             armada38x) expect_arch="ARM" ;;
-            evansport) expect_arch="Intel 80386" ;;
+            evansport) expect_arch="Intel (80386|i386)" ;;
             *) echo "::error::No expected ELF arch mapped for '${{ matrix.arch }}'"; exit 1 ;;
           esac
 
@@ -126,13 +154,12 @@ jobs:
 
           file_out=$(file -b "$helper")
           echo "${HELPER_NAME}-helper: $file_out"
-          case "$file_out" in
-            *"$expect_arch"*) echo "OK: matches expected arch '$expect_arch'" ;;
-            *)
-              echo "::error::${HELPER_NAME}-helper in $spk doesn't look like '$expect_arch' (got: $file_out) - wrong-arch compiler was likely used"
-              exit 1
-              ;;
-          esac
+          if echo "$file_out" | grep -Eq "$expect_arch"; then
+            echo "OK: matches expected arch '$expect_arch'"
+          else
+            echo "::error::${HELPER_NAME}-helper doesn't look like '$expect_arch' (got: $file_out) - wrong binary was selected"
+            exit 1
+          fi
 
           rm -rf "$workdir"
 
@@ -167,7 +194,7 @@ jobs:
             dsm6="${dsm6/${{ steps.dsm_suffix.outputs.suffix }}/DSM-6.x}"
             tmpdir=$(mktemp -d)
             tar -xf "$f" -C "$tmpdir"
-            sed -i 's/arch=".*"/arch="noarch"/' "$tmpdir/INFO"
+            sed -i 's/^arch=".*"/arch="noarch"/' "$tmpdir/INFO"
             sed -i -E 's/os_min_ver="7\.0-[0-9]+"/os_min_ver="6.0-7321"/' "$tmpdir/INFO"
             sed -i 's/os_max_ver="9.9-99999"/os_max_ver="6.9-99999"/' "$tmpdir/INFO"
             sed -i -E 's/install_dep_packages="[^"]*"/install_dep_packages="py3k>=3.8.6-0154"/' "$tmpdir/INFO"
@@ -176,6 +203,87 @@ jobs:
             rm -rf "$tmpdir/helper"
             tar -cf "$dsm6" -C "$tmpdir" $(ls "$tmpdir")
             rm -rf "$tmpdir"
+          done
+          ls -l ./dist
+
+      # SRM 1.3 package, made from the DSM 6 noarch package. Differences:
+      #  - INFO: SRM os_min_ver/os_max_ver and install_dep_packages=""
+      #  - package.tgz is gzip (SRM can't unpack the xz that the builder makes)
+      #  - scripts use the bundled static bash (SRM has no bash), so their
+      #    shebangs point at ui/bin/bash, which postinst symlinks to the
+      #    binary that runs on that router
+      #  - static bash 5.2 is bundled (postinst symlinks ui/bin/bash)
+      #  - the DSM 7 helper (x86_64) is removed
+      # Keep package.tgz first in the tar, like the SRM package that installed.
+      - name: Create noarch package for SRM 1.3
+        if: steps.check_assets.outputs.spk_count == '0' && matrix.arch == 'kvmx64'
+        run: |
+          set -euo pipefail
+          PKG_ID="drive_info"   # same name that api.cgi and postinst use
+          BASH_PATH="/var/packages/${PKG_ID}/target/ui/bin/bash"
+
+          for f in ./dist/${SPK_PREFIX}-noarch-*-DSM-6.x.spk; do
+            srm="${f/DSM-6.x/SRM-1.3.x}"
+            tmpdir=$(mktemp -d)
+            pkgdir=$(mktemp -d)
+            tar -xf "$f" -C "$tmpdir"
+            tar -xf "$tmpdir/package.tgz" -C "$pkgdir"
+            rm -f "$tmpdir/package.tgz"
+
+            # DSM 7 helper is an x86_64 binary and is not used on SRM
+            rm -rf "$pkgdir/bin/helper"
+
+            # Bundled static bash binary. postinst keeps the one that
+            # runs on the router and symlinks ui/bin/bash to it.
+            for b in bash-armv7-hf-static bash-aarch64-static; do
+              cp "$GITHUB_WORKSPACE/srm/bash/$b" "$pkgdir/ui/bin/$b"
+              chmod 555 "$pkgdir/ui/bin/$b"
+            done
+
+            # Scripts that need bash
+            for s in ui/api.cgi ui/bin/feed_api.sh; do
+              if [ ! -f "$pkgdir/$s" ]; then
+                echo "::error::$s not found in package"
+                exit 1
+              fi
+              sed -i "1s|^#!.*bash.*\$|#!${BASH_PATH}|" "$pkgdir/$s"
+              if [ "$(head -n 1 "$pkgdir/$s")" != "#!${BASH_PATH}" ]; then
+                echo "::error::shebang of $s was not updated"
+                exit 1
+              fi
+            done
+
+            # SRM's desktop is served from /webman/index.cgi, so the iframe's
+            # relative src="webman/3rdparty/..." resolves to /webman/webman/...
+            # and gives a 404. DSM 6/7 are served from / so they need the
+            # relative form; only the SRM package gets the absolute one.
+            js=$(ls "$pkgdir"/ui/${MAIN_JS_NAME}-*.js 2>/dev/null | head -n 1)
+            if [ -z "$js" ]; then
+              echo "::error::${MAIN_JS_NAME}-*.js not found in package"
+              exit 1
+            fi
+            sed -i 's|src="webman/3rdparty/|src="/webman/3rdparty/|' "$js"
+            if ! grep -q 'src="/webman/3rdparty/' "$js" \
+            || grep -q 'src="webman/3rdparty/' "$js"; then
+              echo "::error::iframe src in $js was not made absolute"
+              exit 1
+            fi
+
+            # SRM needs gzip, not the xz that the package builder makes
+            (cd "$pkgdir" && tar -czf "$tmpdir/package.tgz" $(ls -A))
+            md5=$(md5sum "$tmpdir/package.tgz" | cut -d' ' -f1)
+
+            sed -i -E 's/^os_min_ver=".*"/os_min_ver="1.3-9193"/' "$tmpdir/INFO"
+            sed -i -E 's/^os_max_ver=".*"/os_max_ver="2.9-99999"/' "$tmpdir/INFO"
+            sed -i -E '/^install_dep_packages=/d' "$tmpdir/INFO"
+            sed -i -E "s/^checksum=\".*\"/checksum=\"${md5}\"/" "$tmpdir/INFO"
+            sed -i -E "s/^extractsize=\".*\"/extractsize=\"$(du -sk "$pkgdir" | cut -f1)\"/" "$tmpdir/INFO"
+            for k in os_min_ver os_max_ver checksum extractsize; do
+              grep -q "^${k}=" "$tmpdir/INFO" || { echo "::error::$k missing from INFO"; exit 1; }
+            done
+
+            (cd "$tmpdir" && tar -cf "$OLDPWD/$srm" package.tgz INFO $(ls -A | grep -vxF -e package.tgz -e INFO))
+            rm -rf "$tmpdir" "$pkgdir"
           done
           ls -l ./dist
 

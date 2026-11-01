@@ -1,3 +1,10 @@
+v2.0.15
+- Package now available for Synology Routers running SRM 1.3.
+- Updated to be compatible with python 2.7 and python 3.
+- Bug fix for package not being listed in 007revad community package source for: 
+  - armv7 platforms: alpine, alpine4k, armada370, armada375, armada38x, armadaxp, monaco, comcerto2k.
+  - i686 platform: evansport.
+
 v2.0.14
 - Set minimum package window width and height.
 - Added https://nas.dante90.mmv.kr/ as an addable package source.

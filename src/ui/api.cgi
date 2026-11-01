@@ -8,10 +8,10 @@
 PKG_NAME="SourceManager"
 PKG_ROOT="/var/packages/${PKG_NAME}"
 #PKG_VERSION=$(synopkg version "$PKG_NAME")  # 0.3 seconds slower
-PKG_VERSION=$(synogetkeyvalue "${PKG_ROOT}/INFO" version)
+PKG_VERSION=$(/usr/syno/bin/synogetkeyvalue "${PKG_ROOT}/INFO" version)
 TARGET_DIR="${PKG_ROOT}/target"
 BIN_DIR="${TARGET_DIR}/bin"
-DSM=$(get_key_value /etc.defaults/VERSION majorversion)
+DSM=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
 if [[ "$DSM" -gt "6" ]]; then
     LOG_DIR="/var/packages/$PKG_NAME/var"
 else
@@ -98,7 +98,20 @@ esac
 ACTION="${PARAM[action]}"
 log "Request: ACTION=${ACTION}"
 
-# --------- 4. JSON utility functions -----------------------------
+# --------- 4. Python 3 function ----------------------------------
+
+# SRM has no python3 in PATH but does have python2.
+# The python code below runs on both python 2.7 and python 3.
+if ! command -v python3 >/dev/null 2>&1; then
+    for _py in /bin/python3 /usr/bin/python3 /usr/local/bin/python3 /bin/python2 /usr/bin/python2 /usr/local/bin/python2 /bin/python /usr/bin/python; do
+        if [[ -x "$_py" ]]; then
+            python3() { "$_py" "$@"; }
+            break
+        fi
+    done
+fi
+
+# --------- 5. JSON utility functions -----------------------------
 
 json_escape() {
     echo "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'

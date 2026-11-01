@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 PKG_NAME=$(basename "$SYNOPKG_PKGDEST")
 TARGET_DIR="/var/packages/$PKG_NAME/target"

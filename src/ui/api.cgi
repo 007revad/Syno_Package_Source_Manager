@@ -98,29 +98,34 @@ esac
 ACTION="${PARAM[action]}"
 log "Request: ACTION=${ACTION}"
 
-# --------- 4. Python 3 function ----------------------------------
+# --------- 4. Find python binary ---------------------------------
 
 # SRM has no python3 in PATH but does have python2.
-# The python code below runs on both python 2.7 and python 3.
-if ! command -v python3 >/dev/null 2>&1; then
-    for _py in /bin/python3 /usr/bin/python3 /usr/local/bin/python3 /bin/python2 /usr/bin/python2 /usr/local/bin/python2 /bin/python /usr/bin/python; do
-        if [[ -x "$_py" ]]; then
-            python3() { "$_py" "$@"; }
-            break
-        fi
-    done
+# All the python code below runs on both python 2.7 and python 3.
+PYTHON=""
+for _py in python3 /bin/python3 /usr/bin/python3 /usr/local/bin/python3 \
+        /bin/python2 /usr/bin/python2 /usr/local/bin/python2 \
+        /bin/python /usr/bin/python; do
+    if command -v "$_py" >/dev/null 2>&1; then
+        PYTHON="$_py"
+        break
+    fi
+done
+if [[ -z "$PYTHON" ]]; then
+    echo '{"success":false,"error":{"message":"no python interpreter found"}}' >&2
+    exit 1
 fi
 
 # --------- 5. JSON utility functions -----------------------------
 
 json_escape() {
-    echo "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+    echo "$1" | "$PYTHON" -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
 
 json_response() {
     local ok="$1" msg="$2" data="$3"
     local msg_json
-    msg_json=$(echo "$msg" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))')
+    msg_json=$(echo "$msg" | "$PYTHON" -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))')
     if [ -z "$data" ]; then
         echo "{\"success\":$ok, \"message\":$msg_json, \"result\":null}"
     else
@@ -132,7 +137,7 @@ json_response() {
 # (belt-and-braces alongside postinst, in case api.cgi runs first)
 ensure_master_file() {
     if [ ! -f "$MASTER_FILE" ] && [ -f "$LIVE_FILE" ]; then
-        python3 -c "
+        "$PYTHON" -c "
 import json
 with open('$LIVE_FILE') as f:
     data = json.load(f)
@@ -153,7 +158,7 @@ with open('$MASTER_FILE', 'w') as f:
 # already has rather than blocking the UI.
 reconcile_master_file() {
     LIVE_LIST="$(run_privileged list 2>>"${LOG_FILE}")"
-    NEW_MASTER="$(MASTER_FILE="${MASTER_FILE}" LIVE_LIST="${LIVE_LIST}" python3 -c "
+    NEW_MASTER="$(MASTER_FILE="${MASTER_FILE}" LIVE_LIST="${LIVE_LIST}" "$PYTHON" -c "
 import json, os
 
 master_file = os.environ['MASTER_FILE']
@@ -253,7 +258,7 @@ catalog)
     fi
     log "catalog: detected DSM majorversion='${DSM_MAJOR}'"
 
-    RESULT_JSON=$(DSM_MAJOR="${DSM_MAJOR}" FEEDS_LIST_FILE="${FEEDS_LIST_FILE}" MASTER_FILE="${MASTER_FILE}" python3 -c "
+    RESULT_JSON=$(DSM_MAJOR="${DSM_MAJOR}" FEEDS_LIST_FILE="${FEEDS_LIST_FILE}" MASTER_FILE="${MASTER_FILE}" "$PYTHON" -c "
 import json, os
 
 def to_int(s):
@@ -309,7 +314,7 @@ save)
         exit 0
     fi
 
-    if ! echo "$RAW_DATA" | python3 -c "import json,sys; json.load(sys.stdin)" 2>>"${LOG_FILE}"; then
+    if ! echo "$RAW_DATA" | "$PYTHON" -c "import json,sys; json.load(sys.stdin)" 2>>"${LOG_FILE}"; then
         log "[ERROR] Failed to parse incoming feeds data"
         json_response false "Invalid feeds data" ""
         exit 0

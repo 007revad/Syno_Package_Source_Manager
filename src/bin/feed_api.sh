@@ -22,10 +22,12 @@ SCRIPT="${BIN_DIR}/feed_api.sh"
 
 # Get DSM major version
 dsm=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
-if [[ $dsm -ge 7 ]]; then
+if [[ "$dsm" -ge 7 ]]; then
     VAR_DIR="${PKG_ROOT}/var"
+    WEBAPI_FLAG="-s"
 else
     VAR_DIR="${PKG_ROOT}/etc"
+    WEBAPI_FLAG=""
 fi
 
 FEEDS_FILE="${VAR_DIR}/feeds"
@@ -112,16 +114,24 @@ self_heal() {
 
 self_heal
 
+# SRM has no python3 in PATH but does have python2.
+# All the python code below runs on both python 2.7 and python 3.
+PYTHON=""
+for _py in python3 /bin/python3 /usr/bin/python3 /usr/local/bin/python3 \
+        /bin/python2 /usr/bin/python2 /usr/local/bin/python2 \
+        /bin/python /usr/bin/python; do
+    if command -v "$_py" >/dev/null 2>&1; then
+        PYTHON="$_py"
+        break
+    fi
+done
+if [[ -z "$PYTHON" ]]; then
+    echo '{"success":false,"error":{"message":"no python interpreter found"}}' >&2
+    exit 1
+fi
+
 ACTION="$1"
 shift
-
-# Get DSM major version - DSM 7 needs -s, DSM 6 must NOT have -s
-dsm=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
-if [[ "$dsm" -ge 7 ]]; then
-    WEBAPI_FLAG="-s"
-else
-    WEBAPI_FLAG=""
-fi
 
 case "$ACTION" in
 list)
@@ -135,7 +145,7 @@ add)
         echo '{"success":false,"error":{"message":"add requires a name and a feed url"}}' >&2
         exit 1
     fi
-    LIST_PARAM=$(python3 -c "
+    LIST_PARAM=$("$PYTHON" -c "
 import json, sys
 obj = {'name': sys.argv[1], 'feed': sys.argv[2]}
 print(json.dumps(json.dumps(obj)))
@@ -148,7 +158,7 @@ delete)
         echo '{"success":false,"error":{"message":"delete requires at least one feed url"}}' >&2
         exit 1
     fi
-    LIST_PARAM=$(python3 -c "
+    LIST_PARAM=$("$PYTHON" -c "
 import json, sys
 print(json.dumps(json.dumps(sys.argv[1:])))
 " "$@")
@@ -170,7 +180,7 @@ save)
     fi
 
     TMP_MASTER="${VAR_DIR}/feeds.tmp"
-    if ! RAW_DATA="$RAW_DATA" TMP_MASTER="$TMP_MASTER" python3 -c "
+    if ! RAW_DATA="$RAW_DATA" TMP_MASTER="$TMP_MASTER" "$PYTHON" -c "
 import json, os
 data = json.loads(os.environ['RAW_DATA'])
 with open(os.environ['TMP_MASTER'], 'w') as f:
@@ -185,7 +195,7 @@ with open(os.environ['TMP_MASTER'], 'w') as f:
 
     LIVE_LIST="$(synowebapi "$WEBAPI_FLAG" --exec api=SYNO.Core.Package.Feed method=list version=1)"
 
-    RAW_DATA="$RAW_DATA" LIVE_LIST="$LIVE_LIST" WEBAPI_FLAG="$WEBAPI_FLAG" python3 -c "
+    RAW_DATA="$RAW_DATA" LIVE_LIST="$LIVE_LIST" WEBAPI_FLAG="$WEBAPI_FLAG" "$PYTHON" -c "
 import json, os, subprocess
 
 data = json.loads(os.environ['RAW_DATA'])
@@ -211,12 +221,15 @@ flag = os.environ.get('WEBAPI_FLAG', '')
 base = ['synowebapi'] + ([flag] if flag else [])
 
 def run_webapi(list_param, method):
-    cmd = base + ['--exec', 'api=SYNO.Core.Package.Feed', f'method={method}', 'version=1', f'list={list_param}']
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    cmd = base + ['--exec', 'api=SYNO.Core.Package.Feed',
+                  'method=' + method, 'version=1', 'list=' + list_param]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, universal_newlines=True)
+    out, err = proc.communicate()
     try:
-        return proc.returncode, json.loads(proc.stdout)
+        return proc.returncode, json.loads(out)
     except Exception:
-        return proc.returncode, {'success': False, 'error': {'message': proc.stderr.strip() or 'no output'}}
+        return proc.returncode, {'success': False, 'error': {'message': err.strip() or 'no output'}}
 
 errors = []
 
@@ -230,7 +243,7 @@ for name, feed in to_add:
     list_param = json.dumps(json.dumps({'name': name, 'feed': feed}))
     rc, res = run_webapi(list_param, 'add')
     if rc != 0 or not res.get('success'):
-        errors.append(f'add failed for {name!r}: ' + json.dumps(res.get('error', res)))
+        errors.append('add failed for ' + json.dumps(name) + ': ' + json.dumps(res.get('error', res)))
 
 if errors:
     print(json.dumps({'success': False, 'message': 'Feeds saved locally, but DSM rejected some changes: ' + '; '.join(errors)}))
